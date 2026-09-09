@@ -1,6 +1,5 @@
 # Loan Default Risk Analysis
-
-Objective: To build a Logistic Regression model to estimate loan default probability using applicant financial and credit data to help lenders make risk-based decisions.
+Objective: To build a Logistic Regression model that estimates loan default probability using applicants’ financial and credit data, and develop an interactive Power BI dashboard to visualize risk patterns and support informed, risk-based lending decisions.
 
 ## Project Status
 
