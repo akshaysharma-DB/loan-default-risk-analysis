@@ -1,6 +1,6 @@
 # Loan Default Risk Analysis
 
-An end-to-end data analytics project focused on understanding loan default risk and identifying factors that influence borrower outcomes.
+Objective: To build a Logistic Regression model to estimate loan default probability using applicant financial and credit data to help lenders make risk-based decisions.
 
 ## Project Status
 
