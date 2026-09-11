@@ -34,7 +34,7 @@ print(df[['term', 'initial_list_status', 'application_type', 'disbursement_metho
 # Employment length contains both num+text, so it is mapped manually.
 # "Unknown" is assigned -1 rather than an estimated value so the model
 # can distinguish missing employment information from actual experience as Emp_length can never be negative
-demp_length_map = {
+emp_length_map = {
     '< 1 year': 0, '1 year': 1, '2 years': 2, '3 years': 3, '4 years': 4,
     '5 years': 5, '6 years': 6, '7 years': 7, '8 years': 8, '9 years': 9,
     '10+ years': 10, 'Unknown': -1
