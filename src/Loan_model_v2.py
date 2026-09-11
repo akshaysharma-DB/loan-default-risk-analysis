@@ -1,13 +1,15 @@
 import pandas as pd
+from Paths import CLEANED_DIR
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
-# --- Load the split data saved earlier ---
-X_train = pd.read_csv(r'D:\Downloads\Data\X_train.csv')
-X_test = pd.read_csv(r'D:\Downloads\Data\X_test.csv')
-y_train = pd.read_csv(r'D:\Downloads\Data\y_train.csv').squeeze()
-y_test = pd.read_csv(r'D:\Downloads\Data\y_test.csv').squeeze()
+# Load the train/test data created earlier so the model is trained
+# and evaluated on the same fixed split.
+X_train = pd.read_csv(CLEANED_DIR / "X_train.csv")
+X_test = pd.read_csv(CLEANED_DIR / "X_test.csv")
+y_train = pd.read_csv(CLEANED_DIR / "y_train.csv").squeeze()
+y_test = pd.read_csv(CLEANED_DIR / "y_test.csv").squeeze()
 
 print(X_train.shape, X_test.shape)
 
@@ -19,26 +21,25 @@ print(X_train.shape, X_test.shape)
 # each feature fairly during optimization.
 #
 # IMPORTANT: fit the scaler on X_train ONLY, then use that same fitted
-# scaler to transform X_test. If we fit on the full dataset (or on test
-# too), information about the test set's distribution leaks into
+# scaler to transform X_test. If we fit on the full dataset (or on test too), information about the test set's distribution leaks into
 # training -- the same leakage principle as addr_state_risk earlier.
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# --- Logistic regression with class weighting ---
-# class_weight='balanced' tells the model to penalize mistakes on the
-# minority class (default=1) more heavily, roughly in proportion to
-# how underrepresented it is (~1:4 here). Without this, the model has
-# little incentive to bother predicting class 1 at all, since ignoring
-# it barely hurts overall accuracy -- exactly what we saw in the baseline.
+# Defaults are the minority class, so class weighting gives more
+# importance to correctly identifying default cases.
+# This helps address the problem seen in the baseline model, where
+# high accuracy came mainly from predicting non-default loans.
 model = LogisticRegression(max_iter=1000, class_weight='balanced')
 model.fit(X_train_scaled, y_train)
 
-# --- Predictions ---
+# Generate predictions on the unseen test data to see how theimproved model performs on loans it has not seen before.
 y_pred = model.predict(X_test_scaled)
 
-# --- Evaluation ---
+# Accuracy is reported for reference, but the confusion matrix and
+# classification report are more useful here because identifying
+# actual defaults is the main business concern.
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print()
 print("Confusion Matrix:")
@@ -49,49 +50,42 @@ print(classification_report(y_test, y_pred))
 
 import pandas as pd
 
-# X_train is still the unscaled DataFrame, so its columns match
-# the order features were fed into the model
+# Keep the original feature names so the model coefficients can be
+# linked back to the variables used in the lending-risk analysis.
 coefficients = pd.DataFrame({
     'feature': X_train.columns,
     'coefficient': model.coef_[0]
 })
 
-# Sort by absolute value -- a large negative coefficient (pushes toward
-# "no default") matters just as much as a large positive one (pushes
-# toward "default")
+# Sort by absolute coefficient size to see which features have the
+# strongest relationship with the model's predicted default risk.
 coefficients['abs_coefficient'] = coefficients['coefficient'].abs()
 coefficients = coefficients.sort_values('abs_coefficient', ascending=False)
 
 print(coefficients.head(15).to_string(index=False))
 
-from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.metrics import roc_auc_score
 
-# --- ROC-AUC ---
-# predict_proba gives the actual probability of default (0 to 1) for each
-# loan, not just the final yes/no prediction. We need this for AUC, since
-# AUC measures how well the model RANKS risk across all possible
-# thresholds -- not just the one (0.5) that .predict() used by default.
+# Use predicted probabilities instead of only yes/no predictions.
+# This allows the model's ability to rank borrowers by risk to be
+# measured independently of a single classification threshold.
 y_proba = model.predict_proba(X_test_scaled)[:, 1]  # probability of class 1 (default)
 
 auc = roc_auc_score(y_test, y_proba)
 print(f"ROC-AUC: {auc:.4f}")
-#ROC-AUC is  0.7157,
-# above the 0.70 mark is better for real-world lending risk models
+
 
 import numpy as np
 
-# --- Cost-based threshold analysis ---
-# Instead of the default 0.5 cutoff, we test a range of thresholds and
-# calculate the actual dollar cost of each one's mistakes, using each
-# loan's real amount rather than one averaged number.
-
-# False negative cost: loan_amnt itself -- money lent out and never
-# recovered when the model wrongly predicted "safe" on an actual defaulter.
+# The default 0.5 threshold is not necessarily the best choice for
+# lending decisions because false negatives and false positives
+# can have very different financial consequences.
+# Test several thresholds and compare their estimated costs.
 fn_cost_per_loan = X_test['loan_amnt']
 
-# False positive cost: lost interest income -- what the lender would have
-# earned had they approved this loan and it been repaid as expected.
-# Simplified to one year of interest; refine with term later if needed.
+# A false positive means rejecting a loan that would not have defaulted.
+# The estimated cost is the interest that could have been earned
+# from approving that loan, using one year of interest as a simple assumption.
 fp_cost_per_loan = X_test['loan_amnt'] * (X_test['int_rate'] / 100)
 
 results = []
@@ -100,9 +94,12 @@ thresholds = np.arange(0.1, 0.95, 0.05)
 for t in thresholds:
     y_pred_t = (y_proba >= t).astype(int)
 
-    # A false negative: actual default (1), predicted no-default (0)
+    # Actual defaults predicted as non-defaults are false negatives.
+    # These represent loans where the model failed to flag the risk.
     fn_mask = (y_test == 1) & (y_pred_t == 0)
-    # A false positive: actual no-default (0), predicted default (1)
+
+    # Actual non-defaults predicted as defaults are false positives.
+    # These represent potentially profitable loans that would be rejected.
     fp_mask = (y_test == 0) & (y_pred_t == 1)
 
     total_fn_cost = fn_cost_per_loan[fn_mask].sum()
@@ -121,9 +118,14 @@ for t in thresholds:
 cost_df = pd.DataFrame(results)
 print(cost_df.to_string(index=False))
 
+# Select the threshold with the lowest estimated total cost.
+# This gives a business-oriented decision point instead of simply
+# relying on the standard 0.5 classification cutoff.
 best_row = cost_df.loc[cost_df['total_cost'].idxmin()]
 print(f"\nOptimal threshold: {best_row['threshold']} (total cost: ${best_row['total_cost']:,.0f})")
 
-# Compare against the default 0.5 cutoff for reference
+# Compare the optimized threshold with the standard 0.5 cutoff
+# to show whether changing the decision threshold actually improves
+# the estimated business outcome.
 default_row = cost_df[cost_df['threshold'] == 0.5]
 print(f"Cost at default 0.5 threshold: ${default_row['total_cost'].values[0]:,.0f}")
