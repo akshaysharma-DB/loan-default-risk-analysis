@@ -1,7 +1,9 @@
 import pandas as pd
+from Paths import RAW_DIR, CLEANED_DIR
 
-# Load the raw dataset (2,26 million loans, 145 columns)
-df = pd.read_csv(r'D:\Downloads\Data\loan.csv', low_memory=False)
+# Load the raw Lending Club dataset.
+# This is the starting point of the pipeline before any filtering or cleaning.
+df = pd.read_csv(RAW_DIR / "loan.csv", low_memory=False)
 
 print(df.shape)
 print(df.head())
@@ -9,8 +11,8 @@ print(df.info())
 print(df.tail())
 print(df['loan_status'].value_counts(dropna=False))
 
-# Keep only loans with a finished outcome
-#  as we can't keep those which are on progress yet because we don't know if they will default.
+# Keep only loans with a known final outcome.
+# Ongoing loans are excluded because their default status is not known yet.
 df_model = df[df['loan_status'].isin(['Fully Paid', 'Charged Off'])].copy()
 print(df_model.shape)
 print(df_model['loan_status'].value_counts())
@@ -34,22 +36,24 @@ leakage_cols = [
     'settlement_percentage', 'settlement_term'
 ]
 
-# Columns that are just identifiers not leakage eg.  Id, policy  code etc. are just not useful for prediction.
-noise_cols = ['id', 'member_id', 'url', 'desc', 'emp_title', 'title',
-              'zip_code', 'policy_code']
+# Remove identifiers and descriptive fields that are not useful as predictive features
+# and could introduce noise into the model. These are not leakage, but they don't help the model.
+noise_cols = ['id', 'member_id', 'url', 'desc', 'emp_title', 'title', 'zip_code', 'policy_code']
 
 df_model = df_model.drop(columns=leakage_cols + noise_cols)
 print(df_model.shape)
 
-# Check how much data is missing in each remaining column
+# Measure missingness in the remaining features before deciding
+# which columns should be removed or attributed filled. This is a key step in data cleaning and preparation for modeling.
 missing = df_model.isnull().sum().sort_values(ascending=False)
 missing_pct = (missing / len(df_model)) * 100
 print(missing_pct[missing_pct > 0])
 pd.set_option('display.max_rows', None)
 print(missing_pct[missing_pct > 0])
 
-#  Drop columns that have 40% values missing of  rows because they are too sparse for this model.
-# Columns below this threshold get their gaps filled insted of dropped.
+# Remove features with more than 40% missing values because they are
+# too sparse to provide reliable information without aggressive imputation.
+# Features below this threshold are retained and handled separately.
 high_missing_cols = missing_pct[missing_pct > 40].index.tolist()
 print(f"Dropping {len(high_missing_cols)} columns with >40% missing:")
 print(high_missing_cols)
@@ -57,19 +61,28 @@ print(high_missing_cols)
 df_model = df_model.drop(columns=high_missing_cols)
 print(df_model.shape)
 
-# Fill remaining gaps in numeric columns with median
-# Because median is less skewed by extreme values. 
+# Fill missing numeric values with the median.
+# Median imputation is less sensitive to extreme values than the mean,
+# which is useful for skewed financial variables.
 numeric_cols = df_model.select_dtypes(include='number').columns
 df_model[numeric_cols] = df_model[numeric_cols].fillna(df_model[numeric_cols].median())
 
 print(df_model.isnull().sum().sum())
-# emp_length is text, not numeric, so it needs its own fill
-#label missing values explicitly as Unknown rather than guessing.
+
+# Employment length is categorical text, so numeric imputation does not apply.
+# Keep missing values explicitly as "Unknown" rather than assuming an employment duration that was never provided.
 df_model['emp_length'] = df_model['emp_length'].fillna('Unknown')
 
 print(df_model['emp_length'].value_counts())
 print(df_model.isnull().sum().sum())
 
-# Saved this 
+# Save the cleaned dataset as the input for the feature-engineering stage.
 df_model.to_csv(r'D:\Downloads\Data\loan_cleaned.csv', index=False)
 print("Saved cleaned data.")
+from Paths import RAW_DIR, CLEANED_DIR
+
+# Just verifying the paths exist and are correct before uploading to GitHub.
+print("Raw:", RAW_DIR)
+print("Cleaned:", CLEANED_DIR)
+print("Raw exists:", RAW_DIR.exists())
+print("Cleaned exists:", CLEANED_DIR.exists())
