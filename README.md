@@ -1,38 +1,42 @@
 # Loan Default Risk Analysis
-Objective: To build a Logistic Regression model that estimates loan default probability using applicants’ financial and credit data, and develop an interactive Power BI dashboard to visualize risk patterns and support informed, risk-based lending decisions.
+
+An end-to-end data analytics project using Lending Club loan data to understand default risk and support risk-based lending decisions.
 
 ## Project Status
 
-**Currently in development**
+**In development** — the project is being built step by step, from raw data preparation to business-focused insights and Power BI visualization.
 
-This project is being built step-by-step, from raw loan data to actionable financial insights.
+### Completed
 
-1. Completed ☺️☺️
+- Processed **2.26M+ loan records** and performed data quality checks
+- Cleaned the dataset and removed post-loan variables to avoid target leakage
+- Reduced the working dataset to **1.3M loans and 83 features**
+- Engineered borrower, loan, credit-history, and state-risk features
+- Performed EDA across loan grade, DTI, income, loan purpose, and state risk
+- Created a stratified train/test split and corrected target leakage in state-risk encoding
+- Built a Logistic Regression baseline and improved model
+- Achieved **71.57% ROC-AUC** and **64% recall for defaults** with the improved model
+- Performed cost-based threshold analysis; a **0.30 threshold** reduced estimated cost from **$438.6M to $370.2M (15.6%)** compared with the standard 0.50 threshold
 
-- Loaded and explored the raw loan dataset
-- Performed data quality checks and exploratory data analysis (EDA)
-- Cleaned and preprocessed the data
-- Performed feature engineering
-- Created training and testing datasets
-- Analyzed default patterns across borrower and loan characteristics
-- Identified key risk factors such as loan grade, DTI, income, loan purpose, and state
-- Evaluated model performance
-- Performed cost-based threshold analysis to understand the financial impact of different decisions
+### Currently Working On
 
-2. Currently Working On 🤔🤔🥲
+- Refining the business interpretation of the model results
+- Turning the analysis into clear, decision-focused insights
+- Preparing the data and metrics for visualization
 
-- Refining the analysis and model evaluation
-- Improving the cost-based decision framework
-- Analyzing results from a business perspective
-- Creating visualizations to communicate key findings
+### Planned
 
-3. Planned 😃😄
+- Build an interactive **Power BI dashboard**
+- Present key default-risk patterns and business insights
+- Develop practical, risk-based lending recommendations
+- Document the complete analytical workflow and final findings
 
-- Finalize the analysis
-- Build an interactive Power BI dashboard
-- Develop business-focused recommendations
-- Document the complete analytical workflow
-- Present the findings in a clear, decision-oriented format
+## Key Findings
+
+- Default rates increased from **6.1% for Grade A** loans to **50.1% for Grade G** loans
+- Default rates increased from **14.9% for DTI below 10** to **32.2% for DTI above 40**
+- The lowest-income group had a **23.7%** default rate compared with **15.8%** for the highest-income group
+- The model's cost analysis showed that the standard 0.50 probability threshold was not the lowest-cost decision point under the project's assumptions
 
 ## Tech Stack
 
@@ -40,9 +44,25 @@ This project is being built step-by-step, from raw loan data to actionable finan
 - Pandas
 - NumPy
 - Scikit-learn
-- Power BI 
+- Power BI
+
+## Project Structure
+
+```text
+loan-default-risk-analysis/
+├── src/
+│   ├── Loan_analysis.py
+│   ├── loan_features.py
+│   ├── Loan_eda.py
+│   ├── Loan_Split.py
+│   ├── Loan_model_baseline.py
+│   ├── Loan_model_v2.py
+│   └── Paths.py
+├── Cleaned/
+├── .gitignore
+└── README.md
+```
 
 ## Objective
 
-The goal of this project is to analyze loan data, understand the factors associated with default risk, and translate those findings into insights that can support better financial decision-making.
-
+To analyze loan data, identify factors associated with default risk, build a model that can estimate default probability, and translate the results into business-focused insights that can support better lending decisions.
