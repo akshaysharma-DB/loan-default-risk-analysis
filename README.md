@@ -11,6 +11,7 @@ An end-to-end data analytics project using Lending Club loan data to understand 
 - [Key Findings & Insights](#key-findings--insights)
 - [Model Performance](#model-performance)
 - [Recommended Business Decisions](#recommended-business-decisions)
+- [Loan Risk Assessment Tool](#loan-risk-assessment-tool)
 - [Limitations & Future Improvements](#limitations--future-improvements)
 - [How to Run the Project](#how-to-run-the-project)
 - [Conclusion](#conclusion)
@@ -241,6 +242,13 @@ I would therefore use **30% as the starting point for risk screening**, rather t
 The model is useful for identifying potential risk, but it is not perfect. Since some borrowers flagged as high risk would still repay their loans, the prediction should support the lending team's decision rather than completely replace it.
 
 **Overall, the goal is to use the model to make lending decisions more risk-aware, while still allowing the business to apply its own policies and risk appetite.**
+
+## Loan Risk Assessment Tool
+
+As an extension of this analysis, I built a Streamlit-based application using the Logistic Regression model to estimate default probability and highlight applicant-specific risk factors.
+
+🚀 **[Live Demo](https://loan-risk-assessment-tool.streamlit.app/)**  
+📂 **[Source Code](https://github.com/akshaysharma-DB/loan-risk-assessment-tool)**
 
 ## Limitations & Future Improvements
 
