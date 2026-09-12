@@ -258,7 +258,6 @@ There are a few areas where I would take the project further:
 - **Feature improvement:** Explore additional features and interactions that could provide more information about borrower risk.
 - **Threshold optimization:** Recalculate the optimal threshold using real lending costs and the lender's actual risk tolerance.
 - **Model interpretability:** Add clearer explanations of which factors are contributing most to an individual borrower's predicted risk.
-- **Dashboard:** Build a Power BI dashboard to make the findings and risk analysis easier for non-technical stakeholders to explore.
 
 ## How to Run the Project
 
